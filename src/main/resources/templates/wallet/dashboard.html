@@ -1,0 +1,102 @@
+<!doctype html>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layouts/layout}"
+>
+  <head>
+    <title>Dashboard Financiero</title>
+  </head>
+  <body>
+    <div layout:fragment="content" class="max-w-4xl mx-auto space-y-6">
+      <div
+        id="balance-card"
+        class="bg-gradient-to-r from-indigo-600 to-blue-600 rounded-2xl p-6 shadow-xl text-white flex justify-between items-center"
+      >
+        <div>
+          <p
+            class="text-sm font-medium text-indigo-100 uppercase tracking-wider"
+          >
+            Saldo Disponible
+          </p>
+          <h1 class="text-4xl font-extrabold mt-1">
+            $<span
+              th:text="${#numbers.formatDecimal(wallet.balance, 1, 'COMMA', 2, 'POINT')}"
+              >0.00</span
+            >
+            <span
+              class="text-lg font-normal text-indigo-200"
+              th:text="${wallet.currency}"
+              >USD</span
+            >
+          </h1>
+        </div>
+        <button
+          hx-get="/wallet/balance"
+          hx-target="#balance-card"
+          hx-swap="outerHTML"
+          class="bg-white/20 hover:bg-white/30 text-white p-3 rounded-xl backdrop-blur-sm transition"
+        >
+          Actualizar
+        </button>
+      </div>
+
+      <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-lg">
+        <h2 class="text-xl font-bold mb-4 text-white">
+          Realizar Transferencia
+        </h2>
+
+        <div id="transfer-response"></div>
+
+        <form
+          hx-post="/wallet/transfer"
+          hx-target="#transfer-response"
+          hx-swap="innerHTML"
+          class="space-y-4"
+        >
+          <!-- Clave de Idempotencia generada para prevenir cobro duplicado por reenvío de formulario -->
+          <input
+            type="hidden"
+            name="idempotencyKey"
+            th:value="${idempotencyKey}"
+          />
+
+          <div>
+            <label class="block text-sm font-medium text-gray-300"
+              >Correo del Destinatario</label
+            >
+            <input
+              type="email"
+              name="targetEmail"
+              required
+              placeholder="destinatario@correo.com"
+              class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-300"
+              >Monto a Transferir</label
+            >
+            <input
+              type="number"
+              name="amount"
+              step="0.01"
+              min="0.01"
+              required
+              placeholder="0.00"
+              class="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+
+          <button
+            type="submit"
+            class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 px-4 rounded-lg transition duration-200"
+          >
+            Enviar Dinero
+          </button>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>

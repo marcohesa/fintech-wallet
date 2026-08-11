@@ -1,0 +1,18 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <body>
+    <div
+      th:fragment="transfer-success"
+      class="bg-green-500/10 border border-green-500 text-green-400 p-3 rounded-lg text-sm text-center"
+    >
+      <span th:text="${successMessage}"></span>
+    </div>
+
+    <div
+      th:fragment="transfer-error"
+      class="bg-red-500/10 border border-red-500 text-red-400 p-3 rounded-lg text-sm text-center"
+    >
+      <span th:text="${errorMessage}"></span>
+    </div>
+  </body>
+</html>
