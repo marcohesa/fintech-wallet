@@ -24,6 +24,13 @@
         ¡Cuenta creada con éxito! Ya puedes iniciar sesión.
       </div>
 
+      <div
+        th:if="${param.error}"
+        class="bg-red-500/10 border border-red-500 text-red-400 p-3 rounded mb-4 text-sm text-center"
+      >
+        Correo electrónico o contraseña incorrectos.
+      </div>
+
       <form th:action="@{/auth/login}" method="post" class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-gray-300"

@@ -2,6 +2,7 @@ package com.fintech.wallet.auth.controller;
 
 import com.fintech.wallet.auth.dto.RegisterDto;
 import com.fintech.wallet.auth.service.AuthService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -26,7 +27,8 @@ public class AuthController {
     public String registerUser(
             @Valid @ModelAttribute("registerDto") RegisterDto dto,
             BindingResult bindingResult,
-            Model model) {
+            Model model,
+            HttpServletResponse response) {
 
         if (bindingResult.hasErrors()) {
             return "auth/register :: #register-form-container";
@@ -34,8 +36,9 @@ public class AuthController {
 
         try {
             authService.registerUser(dto);
+            response.setHeader("HX-Redirect", "/auth/login?registered=true");
             return "redirect:/auth/login?registered=true";
-        } catch (IllegalArgumentException e) {
+        } catch (Exception e) {
             model.addAttribute("errorMessage", e.getMessage());
             return "auth/register :: #register-form-container";
         }

@@ -14,6 +14,10 @@ RUN mvn clean package -DskipTests
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
+# Creamos un usuario no root para ejecutar la aplicación de manera segura
+RUN addgroup -S spring && adduser -S spring -G spring
+USER spring:spring
+
 # Copiamos el archivo JAR compilado desde la etapa anterior
 COPY --from=build /app/target/*.jar app.jar
 
