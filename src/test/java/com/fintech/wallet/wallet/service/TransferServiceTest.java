@@ -28,6 +28,9 @@ class TransferServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private WalletService walletService;
+
     @InjectMocks
     private TransferService transferService;
 
@@ -50,10 +53,8 @@ class TransferServiceTest {
         TransferRequestDto dto = new TransferRequestDto("target@wallet.com", new BigDecimal("200.00"), "key-123");
 
         when(userRepository.findByEmail("target@wallet.com")).thenReturn(Optional.of(targetUser));
-        when(walletRepository.findByUserId(1L)).thenReturn(Optional.of(sourceWallet));
-        when(walletRepository.findByUserId(2L)).thenReturn(Optional.of(targetWallet));
-        when(walletRepository.findByIdWithLock(10L)).thenReturn(Optional.of(sourceWallet));
-        when(walletRepository.findByIdWithLock(20L)).thenReturn(Optional.of(targetWallet));
+        when(walletRepository.findByUserIdWithLock(1L)).thenReturn(Optional.of(sourceWallet));
+        when(walletRepository.findByUserIdWithLock(2L)).thenReturn(Optional.of(targetWallet));
 
         transferService.executeTransfer(1L, dto);
 
@@ -66,10 +67,8 @@ class TransferServiceTest {
         TransferRequestDto dto = new TransferRequestDto("target@wallet.com", new BigDecimal("1000.00"), "key-123");
 
         when(userRepository.findByEmail("target@wallet.com")).thenReturn(Optional.of(targetUser));
-        when(walletRepository.findByUserId(1L)).thenReturn(Optional.of(sourceWallet));
-        when(walletRepository.findByUserId(2L)).thenReturn(Optional.of(targetWallet));
-        when(walletRepository.findByIdWithLock(10L)).thenReturn(Optional.of(sourceWallet));
-        when(walletRepository.findByIdWithLock(20L)).thenReturn(Optional.of(targetWallet));
+        when(walletRepository.findByUserIdWithLock(1L)).thenReturn(Optional.of(sourceWallet));
+        when(walletRepository.findByUserIdWithLock(2L)).thenReturn(Optional.of(targetWallet));
 
         assertThatThrownBy(() -> transferService.executeTransfer(1L, dto))
                 .isInstanceOf(IllegalArgumentException.class)

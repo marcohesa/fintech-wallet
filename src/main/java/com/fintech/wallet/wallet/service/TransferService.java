@@ -17,41 +17,43 @@ public class TransferService {
 
     private final WalletRepository walletRepository;
     private final UserRepository userRepository;
+    // Inyectar WalletService o aplicar @CacheEvict directo
+    private final WalletService walletService;
 
     @Transactional
     public void executeTransfer(Long sourceUserId, TransferRequestDto dto) {
         User targetUser = userRepository.findByEmail(dto.targetEmail().toLowerCase().trim())
                 .orElseThrow(() -> new IllegalArgumentException("El destinatario no existe"));
 
-        Wallet sourceWallet = walletRepository.findByUserId(sourceUserId)
-                .orElseThrow(() -> new IllegalStateException("Billetera de origen no encontrada"));
-
-        Wallet targetWallet = walletRepository.findByUserId(targetUser.getId())
-                .orElseThrow(() -> new IllegalStateException("Billetera de destino no encontrada"));
-
-        if (sourceWallet.getId().equals(targetWallet.getId())) {
+        if (sourceUserId.equals(targetUser.getId())) {
             throw new IllegalArgumentException("No puedes realizar una transferencia a ti mismo");
         }
 
-        // Ordenamiento explícito por ID para prevenir DEADLOCKS en transacciones concurrentes cruzadas
-        Long firstId = sourceWallet.getId() < targetWallet.getId() ? sourceWallet.getId() : targetWallet.getId();
-        Long secondId = sourceWallet.getId() < targetWallet.getId() ? targetWallet.getId() : sourceWallet.getId();
+        // Ordenamiento explícito por ID de usuario para prevenir DEADLOCKS en transacciones concurrentes cruzadas
+        Long firstUserId = sourceUserId < targetUser.getId() ? sourceUserId : targetUser.getId();
+        Long secondUserId = sourceUserId < targetUser.getId() ? targetUser.getId() : sourceUserId;
 
-        Wallet firstLocked = walletRepository.findByIdWithLock(firstId).orElseThrow();
-        Wallet secondLocked = walletRepository.findByIdWithLock(secondId).orElseThrow();
+        // Adquisición directa de bloqueos pesimistas para asegurar la lectura del saldo actualizado sin stale L1 cache
+        Wallet firstWallet = walletRepository.findByUserIdWithLock(firstUserId)
+                .orElseThrow(() -> new IllegalStateException("Billetera no encontrada para el usuario: " + firstUserId));
+        Wallet secondWallet = walletRepository.findByUserIdWithLock(secondUserId)
+                .orElseThrow(() -> new IllegalStateException("Billetera no encontrada para el usuario: " + secondUserId));
 
-        Wallet lockedSource = sourceWallet.getId().equals(firstId) ? firstLocked : secondLocked;
-        Wallet lockedTarget = targetWallet.getId().equals(firstId) ? firstLocked : secondLocked;
+        Wallet sourceWallet = sourceUserId.equals(firstUserId) ? firstWallet : secondWallet;
+        Wallet targetWallet = sourceUserId.equals(firstUserId) ? secondWallet : firstWallet;
 
-        if (lockedSource.getBalance().compareTo(dto.amount()) < 0) {
+        if (sourceWallet.getBalance().compareTo(dto.amount()) < 0) {
             throw new IllegalArgumentException("Saldo insuficiente para completar la transferencia");
         }
 
         // Actualización atómica del saldo
-        lockedSource.setBalance(lockedSource.getBalance().subtract(dto.amount()));
-        lockedTarget.setBalance(lockedTarget.getBalance().add(dto.amount()));
+        sourceWallet.setBalance(sourceWallet.getBalance().subtract(dto.amount()));
+        targetWallet.setBalance(targetWallet.getBalance().add(dto.amount()));
 
-        walletRepository.save(lockedSource);
-        walletRepository.save(lockedTarget);
+        walletRepository.save(sourceWallet);
+        walletRepository.save(targetWallet);
+
+        walletService.evictWalletCache(sourceUserId);
+        walletService.evictWalletCache(targetUser.getId());
     }
 }

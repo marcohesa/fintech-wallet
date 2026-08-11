@@ -46,6 +46,9 @@ services:
     ports:
       - "8080:8080"
 
+    volumes:
+      - ./src/main/resources/templates:/app/templates
+
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/wallet_db
       SPRING_DATASOURCE_USERNAME: wallet_user
